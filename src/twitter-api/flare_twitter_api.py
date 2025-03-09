@@ -96,6 +96,7 @@ def fetch_tweets(query, max_results=1):
 
 # Define search query
 search_query = '(FLR OR #FLR OR "Flare Network" OR $FLR)'
+# search_query = '(XRP OR #XRP OR "XRPL" OR $XRP)'
 
 # Fetch tweets
 fetch_tweets(search_query, 1)

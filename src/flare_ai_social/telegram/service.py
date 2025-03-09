@@ -293,6 +293,7 @@ class TelegramBot:
             "I can answer questions about Flare Network."
             "*Available commands:*\n"
             "/start - Start the conversation\n"
+            "/pulse - Get the current FlarePulse\n"
             "/help - Show this help message\n"
             "/debug - Show diagnostic information\n\n"
             "Simply send me a message, and I'll do my best to assist you!"
