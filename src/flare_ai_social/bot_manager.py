@@ -85,10 +85,6 @@ class BotManager:
         """Initialize and start the Twitter bot in a separate thread."""
         logger.info("start_twitter_bot")
 
-        if not settings.enable_twitter:
-            logger.info("Twitter bot disabled in settings")
-            return False
-
         if not all(
             [
                 settings.x_api_key,
@@ -140,10 +136,6 @@ class BotManager:
             return True
 
     async def start_telegram_bot(self) -> bool:
-        """Initialize and start the Telegram bot."""
-        if not settings.enable_telegram:
-            logger.info("Telegram bot disabled in settings")
-            return False
 
         if not settings.telegram_api_token:
             logger.warning("Telegram bot not started: Missing API token")
