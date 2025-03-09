@@ -1,6 +1,7 @@
 import time
+import pandas as pd
+import json
 from typing import Any, cast
-
 from flare_ai_social.flare.getFLRPrice import FTSOService
 from flare_ai_social.flare.getXRPPrice import FDCService
 import structlog
@@ -13,6 +14,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+
 
 from flare_ai_social.ai import BaseAIProvider
 
@@ -243,11 +245,67 @@ class TelegramBot:
         flr_price, timestamp = ftso_service.get_flr_price()
         logger.info("telegram service 5")
 
-        await update.message.reply_text(
-            f"👋 Hello {user.first_name}! Here is the latest Flare Pulse :fire:"
-            f"XRP Price: {xrp_price}. flr_price:{flr_price} timestamp: {timestamp}"
+
+        try:
+            df_xrpl_tweets = pd.read_csv("src/data/tweets_xrpl.csv")
+            xrpl_tweets = df_xrpl_tweets.to_json(orient="records")
+            
+            df_flr_tweets = pd.read_csv("src/data/tweets_flr.csv")
+            flr_tweets = df_flr_tweets.to_json(orient="records")
+        except Exception:
+            logger.exception("Error loading tweet data files")
+            xrpl_tweets = "[]"
+            flr_tweets = "[]"
+        
+        # Prepare data for AI
+        pulse_data = {
+            "xrp_price": str(xrp_price),
+            "flr_price": str(flr_price),
+            "timestamp": str(timestamp),
+            "xrpl_tweets": xrpl_tweets,
+            "flr_tweets": flr_tweets
+        }
+        
+        # Create the prompt without a structured schema
+        pulse_prompt = f"""
+        Your personality is to be concise and to the point. Use Web3 terminology and emojis.
+        Your name is FlarePulse. Here is your data:
+        
+        XRP Price: ${pulse_data["xrp_price"]}
+        FLR Price: ${pulse_data["flr_price"]}
+        Timestamp: {pulse_data["timestamp"]}
+        XRPL Tweets: {pulse_data["xrpl_tweets"]}
+        FLR Tweets: {pulse_data["flr_tweets"]}
+        
+        
+        Generate two short pulse statements (2-3 sentences each):
+        1. For XRP - Include current sentiment, price action, and a hashtag
+        2. For FLR - Include current sentiment, price action, and a hashtag
+        
+        Format your response as plain text with clear sections for XRP and FLR.
+        """
+        
+        # Send pulse data to the AI model without schema
+        logger.info("Sending pulse request to AI")
+        ai_response = self.ai_provider.generate_content(pulse_prompt)
+        response_text = ai_response.text
+        logger.info("AI response received")
+        
+        # Format the response for Telegram
+        formatted_response = (
+            f"👋 Hello {user.first_name}!  Here is the latest Flare Pulse\n\n"
+            f"🔥 *FLARE PULSE* 🔥\n\n"
+            f"*Current Prices*\n"
+            f"• XRP: ${xrp_price}\n"
+            f"• FLR: ${flr_price}\n"
+            f"• Updated: {timestamp}\n\n"
+            f"*AI Analysis*\n"
+            f"{response_text}"
         )
+        
+        await update.message.reply_text(formatted_response, parse_mode="Markdown")
         logger.info("Pulse command handled", user_id=user_id)
+        
 
     async def start_command(
         self, update: Update, _context: ContextTypes.DEFAULT_TYPE

@@ -36,19 +36,16 @@ def save_last_tweet_id(tweet_id):
         json.dump({"last_tweet_id": tweet_id}, file)
 
 
-def save_tweets_to_csv(tweets):
-    """Save tweets to a CSV file."""
+def save_tweets_to_csv(tweets, csv_file=CSV_FILE, token_type=None):
+    """Save tweets to a CSV file with token type."""
     if not tweets:
         print("No new tweets to save.")
         return
 
     data_list = []
     for tweet in tweets:
-        print("Looping")
-        print(tweet)
-        print(tweet.public_metrics)
-        print(tweet.public_metrics["retweet_count"])
-        data_list.append({
+        # ...existing code that builds tweet data...
+        tweet_data = {
             "id": tweet.id,
             "text": tweet.text,
             "created_at": tweet.created_at,
@@ -64,13 +61,18 @@ def save_tweets_to_csv(tweets):
             "hashtags": [h["tag"] for h in tweet.entities["hashtags"]] if tweet.entities and "hashtags" in tweet.entities else None,
             "mentions": [m["username"] for m in tweet.entities["mentions"]] if tweet.entities and "mentions" in tweet.entities else None,
             "urls": [u["expanded_url"] for u in tweet.entities["urls"]] if tweet.entities and "urls" in tweet.entities else None
-        })
+        }
+        
+        # Add token type if provided
+        if token_type:
+            tweet_data["token_type"] = token_type
+            
+        data_list.append(tweet_data)
 
     df = pd.DataFrame(data_list)
-    df.to_csv(CSV_FILE, mode="a", index=False,
-              header=not os.path.exists(CSV_FILE))
-    print(f"Saved {len(df)} tweets to {CSV_FILE}")
-
+    df.to_csv(csv_file, mode="a", index=False,
+              header=not os.path.exists(csv_file))
+    print(f"Saved {len(df)} tweets to {csv_file}")
 
 def fetch_tweets(query, max_results=1):
     """Fetch recent tweets while avoiding duplicates and save to CSV."""
@@ -85,18 +87,31 @@ def fetch_tweets(query, max_results=1):
             since_id=last_tweet_id  # Avoid duplicate tweets
         )
 
-        if response and response.data:
-            save_tweets_to_csv(response.data)
-            save_last_tweet_id(response.data[0].id)  # Save latest tweet ID
-        else:
-            print("No new tweets found.")
+        # if response and response.data:
+        #     save_tweets_to_csv(response.data)
+        #     save_last_tweet_id(response.data[0].id)  # Save latest tweet ID
+        # else:
+        #     print("No new tweets found.")
     except tweepy.TweepyException as e:
         print("Error fetching tweets:", e)
 
 
-# Define search query
-search_query = '(FLR OR #FLR OR "Flare Network" OR $FLR)'
-# search_query = '(XRP OR #XRP OR "XRPL" OR $XRP)'
+# # Define search query
+# search_query = '(FLR OR #FLR OR "Flare Network" OR $FLR)'
+# # search_query = '(XRP OR #XRP OR "XRPL" OR $XRP)'
+
+# # Fetch tweets
+# fetch_tweets(search_query, 1)
+
+# Define search queries
+flare_search_query = '(FLR OR #FLR OR "Flare Network" OR $FLR)'
+xrp_search_query = '(XRP OR #XRP OR "XRPL" OR $XRP)'
 
 # Fetch tweets
-fetch_tweets(search_query, 1)
+response = fetch_tweets(flare_search_query, 10)
+if response and response.data:
+    save_tweets_to_csv(response.data, token_type="FLR")
+
+response = fetch_tweets(xrp_search_query, 10)
+if response and response.data:
+    save_tweets_to_csv(response.data, token_type="XRP")
