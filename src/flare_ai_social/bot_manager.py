@@ -83,6 +83,8 @@ class BotManager:
 
     def start_twitter_bot(self) -> bool:
         """Initialize and start the Twitter bot in a separate thread."""
+        logger.info("start_twitter_bot")
+
         if not settings.enable_twitter:
             logger.info("Twitter bot disabled in settings")
             return False
@@ -252,7 +254,8 @@ class BotManager:
                 logger.exception("Error shutting down Telegram bot")
 
         if "Twitter" in self.active_bots:
-            logger.info("Twitter bot daemon thread will terminate with main process")
+            logger.info(
+                "Twitter bot daemon thread will terminate with main process")
 
         logger.info("All bots shutdown completed")
 

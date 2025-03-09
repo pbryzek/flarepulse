@@ -121,7 +121,7 @@ class BaseRouter:
 
         url = self.base_url + endpoint
         response = self.session.get(
-            url=url, params=params, headers=self.headers, timeout=30
+            url=url, params=params, headers=self.headers, timeout=30, ssl=False
         )
 
         success_status = 200

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import aiohttp
+from flare_ai_social.settings import settings
 import structlog
 
 from flare_ai_social.ai import BaseAIProvider
@@ -65,7 +66,8 @@ class TwitterBot:
             raise ValueError(ERR_RAPIDAPI_KEY)
 
         # Monitoring parameters
-        self.accounts_to_monitor = config.accounts_to_monitor or ["@privychatxyz"]
+        self.accounts_to_monitor = config.accounts_to_monitor or [
+            "@privychatxyz"]
         self.polling_interval = config.polling_interval
 
         # API endpoints
@@ -140,7 +142,8 @@ class TwitterBot:
         # Generate signature
         signature = base64.b64encode(
             hmac.new(
-                signing_key.encode("utf-8"), base_string.encode("utf-8"), hashlib.sha1
+                signing_key.encode(
+                    "utf-8"), base_string.encode("utf-8"), hashlib.sha1
             ).digest()
         ).decode("utf-8")
 
@@ -150,7 +153,8 @@ class TwitterBot:
         # Format the Authorization header
         auth_header_parts: list[str] = []
         for k, v in sorted(oauth_params.items()):
-            auth_header_parts.append(f'{self._url_encode(k)}="{self._url_encode(v)}"')
+            auth_header_parts.append(
+                f'{self._url_encode(k)}="{self._url_encode(v)}"')
 
         return "OAuth " + ", ".join(auth_header_parts)
 
@@ -330,11 +334,13 @@ class TwitterBot:
         """Search Twitter using new RapidAPI endpoint with a recent time filter"""
         params = {"query": keyword, "count": "20", "type": "Latest"}
 
+        logger.info("search_twitter")
         try:
             async with session.get(
                 self.rapidapi_search_endpoint,
                 headers=self._get_rapidapi_headers(),
                 params=params,
+                ssl=False
             ) as response:
                 if response.status == HTTP_OK:
                     result = await response.json()
@@ -512,7 +518,8 @@ class TwitterBot:
                             for tweet in new_mentions:
                                 await self.handle_mention(tweet)
                         else:
-                            logger.debug("No new mentions found for %s", account)
+                            logger.debug(
+                                "No new mentions found for %s", account)
 
                         if len(self.accounts_to_monitor) > 1:
                             await asyncio.sleep(1)
